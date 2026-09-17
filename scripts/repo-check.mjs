@@ -25,15 +25,17 @@ const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));
 const skillPkg=JSON.parse(await readFile(resolve(root,'skills/qa-browser-jev/package.json'),'utf8'));
 if(pkg.name!=='browser-qa'||pkg.private===true||pkg.bin?.['browser-qa']?.replace(/^\.\//,'')!=='bin/browser-qa.mjs'||!pkg.files?.includes('skills/qa-browser-jev/')||pkg.repository?.url!=='git+https://github.com/schulxf/browser-qa.git')fail('ROOT_PACKAGE_NPX_METADATA');
 if(pkg.version!==skillPkg.version||!skill.includes(`version: "${pkg.version}"`))fail('VERSION_MISMATCH');
-const installer=spawnSync(process.execPath,[resolve(root,'bin/browser-qa.mjs'),'doctor'],{encoding:'utf8',shell:false});
-if(installer.status!==0)fail(`INSTALLER_DOCTOR\n${installer.stderr}`);
 for(const p of files.filter(p=>p.replaceAll('\\','/').includes('/skills/qa-browser-jev/'))){
   const t=await readFile(p,'utf8');
   if(/(?:[A-Z]:\\Users\\|\/mnt\/data\/|\/home\/oai\/)/.test(t))fail(`ABSOLUTE_LOCAL_PATH ${p}`);
 }
+const installer=spawnSync(process.execPath,[resolve(root,'bin/browser-qa.mjs'),'--help'],{encoding:'utf8',shell:false});
+if(installer.status!==0)fail('INSTALLER_HELP');
 if(errors){process.exitCode=1;}else{
   console.log(`Distribuição: ${files.length} arquivos; sintaxe, JSON, links e neutralidade conferidos.`);
-  const installerTests=spawnSync(process.execPath,['--test',resolve(root,'scripts/installer.test.mjs')],{stdio:'inherit',shell:false});
-  if(installerTests.status!==0){process.exitCode=installerTests.status??1;}
-  else {const r=spawnSync(process.execPath,[resolve(root,'skills/qa-browser-jev/scripts/test.mjs')],{stdio:'inherit',shell:false});process.exitCode=r.status??1;}
+  const testFiles=(await readdir(resolve(root,'scripts'))).filter(n=>n.endsWith('.test.mjs')).sort().map(n=>resolve(root,'scripts',n));
+  const installerTests=spawnSync(process.execPath,['--test',...testFiles],{stdio:'inherit',shell:false});
+  if(installerTests.status!==0)process.exit(installerTests.status??1);
+  const r=spawnSync(process.execPath,[resolve(root,'skills/qa-browser-jev/scripts/test.mjs')],{stdio:'inherit',shell:false});
+  process.exitCode=r.status??1;
 }

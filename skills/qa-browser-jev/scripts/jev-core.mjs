@@ -25,20 +25,45 @@ function keys(value, allowed, code) {
 }
 /** Detecção limitada: dados sintéticos e revisão da entrada continuam obrigatórios. */
 export function guardSensitive(value, secretValues = []) {
-  const serialized = JSON.stringify(value);
+  let serialized;
+  try { serialized = JSON.stringify(value); } catch { throw new QaError('INVALID_SERIALIZABLE_INPUT'); }
   demand(typeof serialized === 'string', 'INVALID_SERIALIZABLE_INPUT');
   demand(Buffer.byteLength(serialized) <= MAX_INPUT_BYTES, 'INPUT_TOO_LARGE');
+  const sensitiveKey = /^(password|passwd|pwd|senha|secret|clientsecret|apikey|aigatewayapikey|accesstoken|refreshtoken|authorization|cookie|setcookie|privatekey)$/i;
   const patterns = [
     /\bBearer\s+[a-zA-Z0-9._~-]{12,}/i,
     /\beyJ[a-zA-Z0-9_-]{8,}\.[a-zA-Z0-9_-]{8,}\.[a-zA-Z0-9_-]{8,}\b/,
     /\b(?:sk|vck|ghp|gho)_[a-zA-Z0-9_-]{12,}\b/,
     /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-    /\b(?:password|senha|api[_ -]?key|access[_ -]?token|refresh[_ -]?token|cookie|authorization)\s*[=:]\s*["']?[^\s"',;]{8,}/i,
+    /["']?\b(?:password|passwd|senha|api[_ -]?key|access[_ -]?token|refresh[_ -]?token|cookie|authorization)["']?\s*[=:]\s*["']?[^\s"',;}]+/i,
   ];
-  demand(!patterns.some(p => p.test(serialized)), 'POSSIBLE_SECRET');
-  for (const secret of secretValues) {
-    if (typeof secret === 'string' && secret.length >= 8) demand(!serialized.includes(secret), 'SECRET_IN_INPUT');
+  let visited = 0;
+  function scan(v, depth = 0) {
+    demand(depth <= 20 && ++visited <= 5000, 'INPUT_COMPLEXITY');
+    if (typeof v === 'string') {
+      for (const secret of secretValues) {
+        if (typeof secret === 'string' && secret.length >= 8) demand(!v.includes(secret), 'SECRET_IN_INPUT');
+      }
+      demand(!patterns.some(p => p.test(v)), 'POSSIBLE_SECRET');
+      const trimmed = v.trim();
+      if (/^[{["]/.test(trimmed)) {
+        let parsed;
+        try { parsed = JSON.parse(trimmed); } catch { /* ordinary unstructured text */ }
+        if (parsed !== undefined && parsed !== v) scan(parsed, depth + 1);
+      }
+      // Handle JSON fragments quoted inside log text, without evaluating that text.
+      const unescaped = v.replace(/\\(["'\\])/g, '$1');
+      if (unescaped !== v) scan(unescaped, depth + 1);
+    } else if (Array.isArray(v)) {
+      for (const item of v) scan(item, depth + 1);
+    } else if (v && typeof v === 'object') {
+      for (const [key, item] of Object.entries(v)) {
+        demand(!sensitiveKey.test(key.replace(/[_ -]/g, '')) || item === null || item === '', 'POSSIBLE_SECRET');
+        scan(item, depth + 1);
+      }
+    }
   }
+  scan(value);
 }
 export function validateInput(input, { now = Date.now(), secretValues = [] } = {}) {
   keys(input, ['schemaVersion', 'mode', 'runId', 'scenarioId', 'goal', 'environment',
@@ -46,7 +71,7 @@ export function validateInput(input, { now = Date.now(), secretValues = [] } = {
     'criterion', 'evidence', 'policy'], 'UNKNOWN_INPUT_FIELD');
   demand(input.schemaVersion === 1, 'SCHEMA_VERSION');
   demand(['decide', 'assess'].includes(input.mode), 'MODE');
-  demand(SAFE_ID.test(input.runId ?? '') && SAFE_ID.test(input.scenarioId ?? ''), 'IDENTITY');
+  demand(SAFE_ID.test(input.runId ?? '') && /^[A-Za-z][A-Za-z0-9_-]{0,80}$/.test(input.scenarioId ?? ''), 'IDENTITY');
   demand(text(input.goal), 'GOAL');
   demand(['local', 'test', 'preview', 'staging'].includes(input.environment), 'ENVIRONMENT_NOT_ALLOWED');
   demand(input.dataClass === 'synthetic' && input.approvedBySupervisor === true, 'DATA_NOT_APPROVED');

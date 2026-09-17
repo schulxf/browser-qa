@@ -123,16 +123,8 @@ export function validateSubject(s) {
   demand(!/PREENCHER|REVISAR|TODO/i.test(`${s.revision} ${s.buildId}`),'SUBJECT_PLACEHOLDER');
   return s;
 }
-export async function createRun(project, runId, subject) {
-  const loaded=await readConfig(project), {root,config}=loaded;
-  demand(ID.test(runId ?? ''),'RUN_ID');
-  validateSubject(subject);
-  demand(!/REVISAR:/.test(JSON.stringify(config.journeys)), 'JOURNEYS_NEED_REVIEW');
-  const parent=await privateDirectory(root,`${config.artifacts.directory}/runs`);
-  const runDir=resolve(parent,runId);
-  await mkdir(runDir,{mode:0o700}); // Sem recursive: uma run existente nunca é apagada/reusada.
-  try {
-    const cases=[];
+export function minimumCases(config) {
+  const cases=[];
     for (const j of config.journeys) for (const viewport of j.viewports) {
       for (const dimension of ['flow','visual']) {
         cases.push({id:`${j.id}-${viewport}-${dimension}`,dimension,journeyId:j.id,actor:j.actor,viewport,
@@ -142,6 +134,19 @@ export async function createRun(project, runId, subject) {
           requiredEvidence:dimension==='flow'?['snapshot','screenshot','assertion']:['snapshot','screenshot','visual-review']});
       }
     }
+  return cases;
+}
+
+export async function createRun(project, runId, subject) {
+  const loaded=await readConfig(project), {root,config}=loaded;
+  demand(ID.test(runId ?? ''),'RUN_ID');
+  validateSubject(subject);
+  demand(!/REVISAR:/.test(JSON.stringify(config.journeys)), 'JOURNEYS_NEED_REVIEW');
+  const parent=await privateDirectory(root,`${config.artifacts.directory}/runs`);
+  const runDir=resolve(parent,runId);
+  await mkdir(runDir,{mode:0o700}); // Sem recursive: uma run existente nunca é apagada/reusada.
+  try {
+    const cases=minimumCases(config);
     demand(cases.every(c=>c.id.length<=81),'GENERATED_CASE_ID_TOO_LONG');
     const contract={schemaVersion:2,runId,environment:config.target.environment,subject,
       configSha256:loaded.configSha256,requireLiveJev:config.jev.mode==='required',
@@ -150,7 +155,7 @@ export async function createRun(project, runId, subject) {
     const result={schemaVersion:2,runId,environment:contract.environment,subject:{...subject},
       configSha256:loaded.configSha256,contractSha256:hash(raw),simulated:false,executorId:'',
       reviewer:{id:'',independent:false,verdict:'pending'},
-      tools:{agentBrowser:{ready:false,version:'',skillSha256:''},jev:{mode:'not_executed',smokePassed:false,requests:0,model:'typesafe-ai/jev'}},
+      tools:{agentBrowser:{ready:false,version:'',skillSha256:''},jev:{mode:config.jev.mode==='off'?'off':'not_executed',smokePassed:false,requests:0,model:'typesafe-ai/jev'}},
       cases:cases.map(c=>({id:c.id,status:'not_executed',observed:'Não executado.',verifier:'',actor:c.actor,
         viewport:c.viewport,pathViolation:false,...(c.dimension==='visual'?{visualInspectedBy:''}:{}),evidence:[]})),defects:[]};
     const files={'config.snapshot.json':loaded.raw,'contract.json':raw,'result.json':JSON.stringify(result,null,2)+'\n',

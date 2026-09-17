@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "runId": "QA-001",
+  "caseId": "FILTER-01-desktop-flow",
+  "subject": {
+    "revision": "REPLACE_WITH_REAL_RELEASE",
+    "sourceDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "buildId": "REPLACE_WITH_SERVED_BUILD"
+  },
+  "verifierId": "REPLACE_WITH_VERIFIER_ID",
+  "observedAt": "REPLACE_WITH_REAL_TIMESTAMP",
+  "status": "blocked",
+  "passed": null,
+  "exitCode": null,
+  "checks": []
+}

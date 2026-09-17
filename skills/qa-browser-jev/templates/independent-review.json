@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "runId": "QA-001",
+  "subject": {
+    "revision": "REPLACE_WITH_REAL_RELEASE",
+    "sourceDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "buildId": "REPLACE_WITH_SERVED_BUILD"
+  },
+  "contractSha256": "REPLACE_WITH_HOST_APPROVED_SHA256",
+  "configSha256": "REPLACE_WITH_FROZEN_CONFIG_SHA256",
+  "reviewerId": "REPLACE_WITH_INDEPENDENT_REVIEWER",
+  "executorId": "REPLACE_WITH_EXECUTOR",
+  "independent": false,
+  "verdict": "pending",
+  "reviewedAt": "REPLACE_WITH_REVIEW_TIMESTAMP",
+  "caseIds": [],
+  "visualEvidence": []
+}
