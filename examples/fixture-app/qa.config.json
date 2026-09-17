@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "name": "catalog-demo",
+  "target": {
+    "baseUrl": "http://127.0.0.1:4173/",
+    "environment": "local",
+    "allowedOrigins": [
+      "http://127.0.0.1:4173"
+    ]
+  },
+  "contextFiles": [],
+  "browser": {
+    "command": "agent-browser",
+    "viewports": [
+      {
+        "id": "desktop",
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "id": "mobile",
+        "width": 390,
+        "height": 844
+      }
+    ]
+  },
+  "jev": {
+    "mode": "required",
+    "model": "typesafe-ai/jev",
+    "maxCalls": 30,
+    "timeoutMs": 8000
+  },
+  "artifacts": {
+    "directory": ".qa-browser-jev"
+  },
+  "auth": {
+    "mode": "anonymous",
+    "instructions": "Sessão isolada, sem credenciais. Usar somente a aplicação sintética local."
+  },
+  "journeys": [
+    {
+      "id": "FILTER-01",
+      "goal": "Filtrar por Categoria A, abrir Ajuda e voltar sem perder o filtro.",
+      "actor": "anonymous-test",
+      "requiredPath": [
+        "Abrir Catálogo.",
+        "Selecionar Categoria A.",
+        "Abrir Ajuda.",
+        "Voltar pelo botão Catálogo.",
+        "Recarregar para verificar persistência."
+      ],
+      "forbiddenRecovery": [
+        "Não reaplicar o filtro depois do retorno ou da recarga."
+      ],
+      "expected": "Categoria A permanece selecionada, exibindo somente Caderno e Mochila.",
+      "verification": "Comparar label do filtro e itens visíveis antes/depois; guardar assertion e screenshots.",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ]
+    }
+  ]
+}

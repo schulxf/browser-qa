@@ -1,0 +1,29 @@
+name: Skill offline checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: skill-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Validate distributable and run offline tests
+        run: npm test
+# No API key, paid requests, untrusted privileged checkout, app deploy or browser QA.
+# Review and pin action SHAs before adopting stricter organizational supply-chain policy.

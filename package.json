@@ -1,0 +1,55 @@
+{
+  "name": "browser-qa",
+  "version": "2.1.0",
+  "type": "module",
+  "description": "Cross-agent browser QA skill with visual review, evidence gates, and Jev-assisted decisions.",
+  "license": "MIT",
+  "author": "Schulx",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schulxf/browser-qa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/schulxf/browser-qa/issues"
+  },
+  "homepage": "https://github.com/schulxf/browser-qa#readme",
+  "keywords": [
+    "agent-skills",
+    "browser-qa",
+    "visual-testing",
+    "ai-agents",
+    "agent-browser",
+    "jev",
+    "codex",
+    "claude",
+    "gemini"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "browser-qa": "bin/browser-qa.mjs"
+  },
+  "files": [
+    "bin/",
+    "skills/qa-browser-jev/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "docs/"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node scripts/repo-check.mjs",
+    "test:installer": "node --test scripts/installer.test.mjs",
+    "test:unit": "node skills/qa-browser-jev/scripts/test.mjs",
+    "check": "node scripts/repo-check.mjs",
+    "doctor": "node skills/qa-browser-jev/scripts/doctor.mjs",
+    "demo": "node examples/fixture-app/server.mjs",
+    "prepack": "npm test"
+  }
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catálogo de demonstração — QA Browser + Jev</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:17px/1.5 system-ui,sans-serif;color:#18212c;background:#f4f5f7}
+main{max-width:960px;margin:auto;padding:28px}nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+button,select{font:inherit;padding:10px 14px;border:1px solid #697583;border-radius:7px;background:white;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #005fcc;outline-offset:4px}
+h1{font-size:clamp(26px,4vw,36px);line-height:1.2;margin-top:0}.muted{color:#52616f}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:24px}
+article{background:white;border:1px solid #ccd3da;padding:20px;border-radius:9px}label{display:block;margin-bottom:8px}.banner{padding:12px;background:#fff0bd;margin-bottom:24px}.small{font-size:13px;overflow-wrap:anywhere}button[aria-current="page"]{background:#18212c;color:white}
+@media(max-width:600px){main{padding:16px}.cards{grid-template-columns:1fr}}
+body[data-bug="overflow"] .cards{min-width:1050px}
+</style>
+</head>
+<body>
+<main>
+<p class="banner">Aplicação sintética local. Nenhuma conta, cobrança ou serviço externo.</p>
+<nav aria-label="Navegação principal"><button id="catalog-tab" aria-current="page">Catálogo</button><button id="help-tab">Ajuda</button></nav>
+<section id="catalog"><h1>Catálogo de teste</h1><p class="muted">O filtro deve persistir ao abrir Ajuda, voltar e recarregar.</p>
+<label for="category">Categoria</label><select id="category"><option value="all">Todas</option><option value="a">Categoria A</option><option value="b">Categoria B</option></select>
+<p id="summary" role="status" aria-live="polite"></p><div id="cards" class="cards"></div></section>
+<section id="help" hidden><h1>Ajuda</h1><p>Use Catálogo para retornar. A escolha da categoria deve ser preservada.</p><button id="back">Voltar ao catálogo</button></section>
+<footer class="small"><p>Build: <span id="build">carregando</span></p><p>Variante: <span id="variant"></span></p></footer>
+</main>
+<script>
+const bug=location.pathname==='/broken-state'?'lost-state':location.pathname==='/broken-layout'?'overflow':'none';
+document.body.dataset.bug=bug;document.querySelector('#variant').textContent=bug;
+const products=[{name:'Caderno',category:'a'},{name:'Mochila',category:'a'},{name:'Caneta',category:'b'}];
+const filter=document.querySelector('#category');const storageKey='qa-fixture-filter-'+bug;
+try{const saved=localStorage.getItem(storageKey);if(['all','a','b'].includes(saved))filter.value=saved;}catch{}
+function render(){const visible=products.filter(p=>filter.value==='all'||p.category===filter.value);document.querySelector('#summary').textContent=visible.length+' itens';const cards=document.querySelector('#cards');cards.replaceChildren();for(const p of visible){const card=document.createElement('article');const name=document.createElement('h2');name.textContent=p.name;const cat=document.createElement('p');cat.textContent='Categoria '+p.category.toUpperCase();card.append(name,cat);cards.append(card);}}
+filter.addEventListener('change',()=>{try{localStorage.setItem(storageKey,filter.value);}catch{}render();});
+function show(view){document.querySelector('#catalog').hidden=view!=='catalog';document.querySelector('#help').hidden=view!=='help';for(const id of ['catalog','help']){const b=document.querySelector('#'+id+'-tab');if(id===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}if(view==='catalog'){if(bug==='lost-state')filter.value='all';render();}}
+document.querySelector('#catalog-tab').addEventListener('click',()=>show('catalog'));document.querySelector('#help-tab').addEventListener('click',()=>show('help'));document.querySelector('#back').addEventListener('click',()=>show('catalog'));render();
+fetch('/__qa/build').then(r=>r.json()).then(info=>document.querySelector('#build').textContent=info.buildId).catch(()=>document.querySelector('#build').textContent='indisponível');
+</script>
+</body></html>

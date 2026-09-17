@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "runId": "QA-PREENCHER",
+  "taskId": "TASK-PREENCHER",
+  "environment": "local",
+  "subject": {
+    "revision": "PREENCHER_REVISAO_OU_RELEASE",
+    "sourceDigest": "PREENCHER_SHA256_DA_FONTE_OU_ARTEFATO",
+    "buildId": "PREENCHER_BUILD_SERVIDO"
+  },
+  "requireLiveJev": true,
+  "scope": "MODELO: adaptar e aprovar critérios antes de executar. Não é evidência de QA realizado.",
+  "scopeExclusions": [],
+  "cases": [
+    {
+      "id": "META-RUNTIME",
+      "dimension": "data",
+      "criterion": "A aplicação aberta corresponde ao build e ambiente declarados.",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "requiredEvidence": [
+        "assertion"
+      ]
+    },
+    {
+      "id": "FLOW-NAV-01",
+      "dimension": "flow",
+      "criterion": "Ao sair da Catálogo e retornar pelo caminho contratado, o filtro mantém a seleção sem reaplicação.",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "requiredEvidence": [
+        "screenshot",
+        "snapshot",
+        "assertion"
+      ]
+    },
+    {
+      "id": "VIS-DESKTOP",
+      "dimension": "visual",
+      "criterion": "A tela alterada mantém legibilidade, hierarquia e controles utilizáveis no desktop, conforme referência e critérios aprovados.",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "requiredEvidence": [
+        "screenshot",
+        "snapshot",
+        "visual-review"
+      ]
+    },
+    {
+      "id": "VIS-MOBILE",
+      "dimension": "visual",
+      "criterion": "Em 390 px, valores não são cortados, não há sobreposição e a ação principal permanece utilizável.",
+      "actor": "usuario-sintetico",
+      "viewport": "mobile-390x844",
+      "requiredEvidence": [
+        "screenshot",
+        "snapshot",
+        "visual-review"
+      ]
+    }
+  ],
+  "configSha256": "PREENCHER_HASH_DO_SNAPSHOT_DA_CONFIGURACAO"
+}

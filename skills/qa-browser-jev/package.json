@@ -1,0 +1,21 @@
+{
+  "name": "qa-browser-jev-skill",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Skill independente de QA visual e de fluxos com agent-browser e Jev via Vercel AI Gateway.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "qa": "node scripts/qa.mjs",
+    "jev": "node scripts/jev.mjs",
+    "gate": "node scripts/qa-gate.mjs"
+  },
+  "dependencies": {
+    "ai": "7.0.105"
+  }
+}

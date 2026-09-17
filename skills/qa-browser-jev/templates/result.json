@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "runId": "QA-PREENCHER",
+  "environment": "local",
+  "subject": {
+    "revision": "PREENCHER_REVISAO_OU_RELEASE",
+    "sourceDigest": "PREENCHER_SHA256_DA_FONTE_OU_ARTEFATO",
+    "buildId": "PREENCHER_BUILD_SERVIDO"
+  },
+  "contractSha256": "PREENCHER_HASH_DOS_BYTES_DO_CONTRATO",
+  "simulated": false,
+  "executorId": "PREENCHER_EXECUTOR",
+  "reviewer": {
+    "id": "",
+    "independent": false,
+    "verdict": "pending"
+  },
+  "tools": {
+    "agentBrowser": {
+      "ready": false,
+      "version": "",
+      "skillSha256": ""
+    },
+    "jev": {
+      "mode": "not_executed",
+      "smokePassed": false,
+      "requests": 0,
+      "model": "typesafe-ai/jev"
+    }
+  },
+  "cases": [
+    {
+      "id": "META-RUNTIME",
+      "status": "not_executed",
+      "observed": "Não executado.",
+      "verifier": "",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "pathViolation": false,
+      "evidence": []
+    },
+    {
+      "id": "FLOW-NAV-01",
+      "status": "not_executed",
+      "observed": "Não executado.",
+      "verifier": "",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "pathViolation": false,
+      "evidence": []
+    },
+    {
+      "id": "VIS-DESKTOP",
+      "status": "not_executed",
+      "observed": "Não executado.",
+      "verifier": "",
+      "actor": "usuario-sintetico",
+      "viewport": "desktop-1440x900",
+      "pathViolation": false,
+      "visualInspectedBy": "",
+      "evidence": []
+    },
+    {
+      "id": "VIS-MOBILE",
+      "status": "not_executed",
+      "observed": "Não executado.",
+      "verifier": "",
+      "actor": "usuario-sintetico",
+      "viewport": "mobile-390x844",
+      "pathViolation": false,
+      "visualInspectedBy": "",
+      "evidence": []
+    }
+  ],
+  "defects": [],
+  "configSha256": "PREENCHER_HASH_DO_SNAPSHOT_DA_CONFIGURACAO"
+}

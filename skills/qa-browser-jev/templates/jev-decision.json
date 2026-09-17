@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "mode": "decide",
+  "runId": "QA-PREENCHER",
+  "scenarioId": "FLOW-NAV-01",
+  "goal": "Retornar ao Catálogo sem reaplicar o filtro.",
+  "environment": "local",
+  "dataClass": "synthetic",
+  "approvedBySupervisor": false,
+  "approvedOrigins": [
+    "http://localhost:3000"
+  ],
+  "observation": {
+    "id": "obs-PREENCHER",
+    "url": "http://localhost:3000/catalog",
+    "capturedAt": "CAPTURAR_DE_NOVO_E_USAR_TIMESTAMP_REAL",
+    "snapshot": "SUBSTITUIR pela observação real minimizada; não usar este exemplo como evidência.",
+    "refs": {
+      "@e7": {
+        "role": "link",
+        "name": "Catálogo"
+      }
+    }
+  },
+  "candidates": [
+    {
+      "id": "goCatalog",
+      "kind": "click",
+      "ref": "@e7",
+      "description": "Retornar por Catálogo sem reaplicar filtro ou recarregar a página.",
+      "risk": "low",
+      "approved": false
+    }
+  ],
+  "policy": {
+    "minProbability": 0.9,
+    "minMargin": 0.2
+  }
+}
