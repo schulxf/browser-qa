@@ -42,9 +42,10 @@ test('parseCredentialInput accepts stdin-friendly formats', () => {
 });
 
 test('configDir follows platform conventions', () => {
-  assert.equal(configDir({ APPDATA: 'C:/Users/A/AppData/Roaming' }, 'win32'), 'C:\\Users\\A\\AppData\\Roaming\\browser-qa');
-  assert.ok(configDir({ XDG_CONFIG_HOME: '/tmp/config' }, 'linux').endsWith('\\tmp\\config\\browser-qa'));
-  assert.ok(configDir({ HOME: '/home/me' }, 'linux').endsWith('\\home\\me\\.config\\browser-qa'));
+  const portable = value => value.replaceAll('\\', '/');
+  assert.equal(portable(configDir({ APPDATA: 'C:/Users/A/AppData/Roaming' }, 'win32')), 'C:/Users/A/AppData/Roaming/browser-qa');
+  assert.ok(portable(configDir({ XDG_CONFIG_HOME: '/tmp/config' }, 'linux')).endsWith('/tmp/config/browser-qa'));
+  assert.ok(portable(configDir({ HOME: '/home/me' }, 'linux')).endsWith('/home/me/.config/browser-qa'));
 });
 
 test('discoverInstalledSkillDirs tolerates common skills list shapes', async () => {
