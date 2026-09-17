@@ -10,7 +10,11 @@
 
 O helper Jev recebe um snapshot normalizado e candidatos escolhidos pelo supervisor. Valida forma, origem, frescor, limites e dados óbvios de segredo; envia avaliação pelo Gateway e normaliza o resultado. Não executa a proposta. O supervisor revalida o alvo e interage usando agent-browser.
 
-Para tornar isso um executor autônomo seria necessário implementar integração de processos/estado do browser, observadores, oráculos, recuperação, visão e revisão do host. Isso não faz parte desta versão; o protocolo é deliberadamente supervisionado.
+Há também um caminho experimental de [navegação delimitada](../skills/qa-browser-jev/references/navigation.md): `navigation.mjs` orquestra o próprio agent-browser, associa refs reais às capacidades previamente revistas e executa até três ações por trecho. Um candidato único dispensa Jev; alternativas elegíveis usam `decide` antes da ação. O supervisor não precisa reconstruir cada payload, mas deve inspecionar cada checkpoint e manter os verificadores independentes.
+
+O helper Jev continua sem controlar o navegador. O código executa somente comandos tipados e limitados; não há outro cliente CDP, shell gerado por modelo, recuperação automática de falhas ou aprovação autônoma. O caminho novo exige uma run existente, configuração congelada, hash do contrato aprovado e sessão exclusiva. Resultados ambíguos param a execução; o relatório final do produto não é alterado pelo runner.
+
+Os contadores distinguem navegação de avaliação posterior das evidências. O comparador A/B analisa registros de medições fornecidos pelo host e recusa contextos diferentes; não gera benchmarks nem demonstra benefício do Jev sem execuções reais.
 
 ## Identidade e portabilidade
 

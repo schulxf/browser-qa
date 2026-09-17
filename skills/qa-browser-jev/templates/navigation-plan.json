@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "help-and-return",
+  "runId": "QA-ONE",
+  "caseId": "FILTER-01-desktop-flow",
+  "contractSha256": "COPY_APPROVED_CONTRACT_SHA256",
+  "approvedBySupervisor": false,
+  "dataClass": "synthetic",
+  "review": {
+    "checkpointId": "COPY_CURRENT_CHECKPOINT_ID",
+    "observationHash": "COPY_CURRENT_OBSERVATION_HASH",
+    "screenshotSha256": "COPY_CURRENT_SCREENSHOT_SHA256",
+    "reviewedBy": "COPY_ACTUAL_VISION_REVIEWER",
+    "accepted": false
+  },
+  "steps": [
+    {
+      "id": "open-help",
+      "goal": "Open Help using a visible navigation control. Do not change the category filter.",
+      "at": "http://127.0.0.1:4173/",
+      "options": [
+        { "kind": "click", "role": "button", "name": "Ajuda", "effect": "read-only" },
+        { "kind": "click", "role": "button", "name": "Catálogo", "effect": "read-only" }
+      ],
+      "settleTimeoutMs": 1500,
+      "expectedAfter": { "textIncludes": ["Use Catálogo para retornar."] }
+    },
+    {
+      "id": "return-catalog",
+      "goal": "Return via Catálogo. Preserve the filter without selecting it again.",
+      "at": "http://127.0.0.1:4173/",
+      "options": [
+        { "kind": "click", "role": "button", "name": "Catálogo", "effect": "read-only" }
+      ],
+      "settleTimeoutMs": 1500,
+      "expectedAfter": { "textIncludes": ["2 itens"] }
+    }
+  ]
+}
