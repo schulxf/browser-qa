@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "runId": "QA-001",
+  "caseId": "FILTER-01-desktop-visual",
+  "subject": {
+    "revision": "REPLACE_WITH_REAL_RELEASE",
+    "sourceDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "buildId": "REPLACE_WITH_SERVED_BUILD"
+  },
+  "capturedAt": "REPLACE_WITH_CAPTURE_TIMESTAMP",
+  "url": "http://127.0.0.1:4173/",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "dpr": 1,
+  "mode": "viewport"
+}

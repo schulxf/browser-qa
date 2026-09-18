@@ -7,7 +7,8 @@ import { homedir } from 'node:os';
 import { createInterface } from 'node:readline/promises';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import process from 'node:process';
-import { defaultCredentialsFile, loadGatewayCredential } from '../skills/qa-browser-jev/scripts/credentials.mjs';
+import { defaultCredentialsFile } from '../skills/qa-browser-jev/scripts/credentials.mjs';
+import { diagnose } from '../skills/qa-browser-jev/scripts/diagnostics.mjs';
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_NAME = 'qa-browser-jev';
@@ -65,7 +66,7 @@ export function parseArgs(argv) {
     } else if (arg.startsWith('--api-key')) {
       throw new Error('API keys must be provided by masked prompt or --from-stdin, never as command-line arguments.');
     } else {
-      throw new Error(`Unknown argument: ${arg}`);
+      throw new Error('Unknown argument. Run --help.');
     }
   }
 
@@ -110,7 +111,6 @@ export function skillsCommandArgs(command, { source = PACKAGE_ROOT, scope, agent
 }
 
 export function configDir(env = process.env, platform = process.platform) {
-  if (env.BROWSER_QA_CONFIG_DIR) return resolve(env.BROWSER_QA_CONFIG_DIR);
   return dirname(defaultCredentialsFile(env, platform));
 }
 
@@ -122,19 +122,20 @@ export function parseCredentialInput(text) {
   const trimmed = text.trim();
   if (!trimmed) return '';
   if (trimmed.startsWith('{')) {
-    const parsed = JSON.parse(trimmed);
+    let parsed;
+    try { parsed = JSON.parse(trimmed); } catch { throw new Error('Invalid credential input.'); }
     return String(parsed.AI_GATEWAY_API_KEY || parsed.aiGatewayApiKey || '').trim();
   }
   const match = /^AI_GATEWAY_API_KEY=(.*)$/m.exec(trimmed);
   return (match ? match[1] : trimmed).trim().replace(/^['"]|['"]$/g, '');
 }
 
-export async function writeCredentials(apiKey, { directory = configDir(), fs = { mkdir, writeFile, chmod, lstat } } = {}) {
+export async function writeCredentials(apiKey, { directory, fs = { mkdir, writeFile, chmod, lstat } } = {}) {
   const key = String(apiKey || '').trim();
   if (!key) throw new Error('AI_GATEWAY_API_KEY was empty.');
-  if (/[\r\n\0]/.test(key)) throw new Error('AI_GATEWAY_API_KEY contains invalid control characters.');
-  await fs.mkdir(directory, { recursive: true, mode: 0o700 });
-  const file = credentialsPath(directory);
+  if (key.length > 8192 || /[\r\n\0]/.test(key)) throw new Error('AI_GATEWAY_API_KEY contains invalid control characters.');
+  const file = defaultCredentialsFile(process.env, process.platform, { directory });
+  await fs.mkdir(dirname(file), { recursive: true, mode: 0o700 });
   if (fs.lstat) {
     try {
       const existing = await fs.lstat(file);
@@ -207,6 +208,9 @@ export async function runInstall(options, io = defaultIo()) {
   await io.run(npx.command, [...npx.prefixArgs, ...addArgs], { stdio: 'inherit' });
   const list = await io.run(npx.command, [...npx.prefixArgs, ...listArgs], { stdio: 'pipe' });
   const installedDirs = await discoverInstalledSkillDirs(list.stdout || '');
+  if (!installedDirs.length) throw new Error('Installation unverified: no installed skill directory was found.');
+  const packages = await existingPackageDirs(installedDirs, io.fs);
+  if (packages.length !== installedDirs.length) throw new Error('Installation incomplete: installed skill package.json is missing.');
   const dependencyDirs = options.skipDeps ? [] : await existingPackageDirs(installedDirs, io.fs);
   for (const dir of dependencyDirs) {
     await io.run(npm.command, [...npm.prefixArgs, 'ci', '--omit=dev', '--ignore-scripts', '--workspaces=false'], { cwd: dir, stdio: 'inherit' });
@@ -220,40 +224,43 @@ export async function runInstall(options, io = defaultIo()) {
       io.log('Credential not configured in non-interactive mode. Run `browser-qa configure`.');
     }
   }
-  return { scope, installedDirs, dependencyDirs };
+  const status = options.skipDeps ? 'INSTALLED_DEPENDENCIES_SKIPPED' : 'INSTALLED';
+  io.log(`Status: ${status}. Run the installed scripts/doctor.mjs before QA; no live validation has run.`);
+  return { status, scope, installedDirs, dependencyDirs };
 }
 
 export async function runConfigure(options, io = defaultIo()) {
-  const directory = resolve(options.configDir || configDir());
+  const directory = options.configDir ? resolve(options.configDir) : undefined;
   const input = options.fromStdin || !io.isTty ? await io.readStdin() : await io.readSecret('AI_GATEWAY_API_KEY');
   const apiKey = parseCredentialInput(input);
   const file = await writeCredentials(apiKey, { directory, fs: io.fs });
   io.log(`Saved AI Gateway credentials to ${file}`);
-  io.log('Browser QA helpers load this private file automatically unless the environment already provides the key.');
+  if (options.configDir) io.log(`For future processes, set BROWSER_QA_ENV_FILE to ${file}. The command-line override is not persisted.`);
+  else io.log('Helpers use this same resolved file unless AI_GATEWAY_API_KEY overrides it.');
   return file;
 }
 
-export async function runDoctor(io = defaultIo()) {
-  const pkg = JSON.parse(await readFile(PACKAGE_JSON, 'utf8'));
-  const skillPath = join(PACKAGE_ROOT, 'skills', SKILL_NAME, 'SKILL.md');
-  const skill = await readFile(skillPath, 'utf8');
-  let credential;
-  try { credential = await loadGatewayCredential(); }
-  catch {
-    let file = null;
-    try { file = defaultCredentialsFile(); } catch {}
-    credential = { present: false, source: 'unsafe-file', file };
+export async function runDoctor(io = defaultIo(), options = {}) {
+  const npx = packageManagerCommand('npx');
+  const directories = new Set();
+  const failures = [];
+  for (const scope of options.scope ? [options.scope] : ['project', 'global']) {
+    try {
+      const list = await io.run(npx.command, [...npx.prefixArgs, ...skillsCommandArgs('list', { scope })], { stdio: 'pipe' });
+      for (const path of await discoverInstalledSkillDirs(list.stdout || '')) directories.add(path);
+    } catch { failures.push(`INSTALLATION_DISCOVERY_${scope.toUpperCase()}`); }
   }
-  io.log(JSON.stringify({
-    status: 'OK',
-    packageRoot: PACKAGE_ROOT,
-    packageName: pkg.name,
-    packageVersion: pkg.version,
-    skillName: /^name:\s*(.+)$/m.exec(skill)?.[1] ?? null,
-    gatewayCredentialPresent: credential.present,
-    gatewayCredentialSource: credential.source,
-    gatewayCredentialFile: credential.file,
-  }, null, 2));
+  if (!directories.size) failures.push('NO_INSTALLED_SKILL_FOUND');
+  const checks = [];
+  for (const skillDir of directories) {
+    const check = await (io.diagnose || diagnose)({ skillDir });
+    checks.push(check);
+    if (check.status !== 'READY') failures.push('INSTALLED_SKILL_NOT_READY');
+  }
+  const report = { status: failures.length ? 'BLOCKED' : 'READY', scope: 'offline-prerequisites-only', blockers: failures, checks };
+  io.log(JSON.stringify(report, null, 2));
+  if (failures.length) process.exitCode = 2;
+  return report;
 }
 
 export async function version() {
@@ -274,7 +281,7 @@ export async function main(argv = process.argv.slice(2), io = defaultIo()) {
   if (options.command === 'configure') {
     await runConfigure(options, io);
   } else if (options.command === 'doctor') {
-    await runDoctor(io);
+    await runDoctor(io, options);
   } else {
     await runInstall(options, io);
   }

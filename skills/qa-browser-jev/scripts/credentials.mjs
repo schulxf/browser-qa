@@ -1,8 +1,11 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
-export function defaultCredentialsFile(env = process.env, platform = process.platform) {
+// Precedence: explicit configure directory > env file > env directory > platform default.
+export function defaultCredentialsFile(env = process.env, platform = process.platform, { directory } = {}) {
+  if (directory !== undefined) return join(resolve(directory), 'credentials.env');
   if (env.BROWSER_QA_ENV_FILE) return resolve(env.BROWSER_QA_ENV_FILE);
+  if (env.BROWSER_QA_CONFIG_DIR) return join(resolve(env.BROWSER_QA_CONFIG_DIR), 'credentials.env');
   if (platform === 'win32') {
     const base = env.APPDATA || (env.USERPROFILE ? join(env.USERPROFILE, 'AppData', 'Roaming') : '');
     if (!base) throw new Error('BROWSER_QA_CREDENTIAL_PATH_UNAVAILABLE');
@@ -31,7 +34,12 @@ export async function loadGatewayCredential({
   read = readFile,
   inspect = lstat,
 } = {}) {
-  if (env.AI_GATEWAY_API_KEY?.trim()) return { present: true, source: 'environment', file: null };
+  if (env.AI_GATEWAY_API_KEY?.trim()) {
+    const key = env.AI_GATEWAY_API_KEY.trim();
+    if (key.length > 8192 || /[\r\n\0]/.test(key)) throw new Error('BROWSER_QA_CREDENTIAL_INVALID');
+    env.AI_GATEWAY_API_KEY = key;
+    return { present: true, source: 'environment', file: null };
+  }
   const file = defaultCredentialsFile(env, platform);
   try {
     const metadata = await inspect(file);
@@ -39,6 +47,7 @@ export async function loadGatewayCredential({
     if (platform !== 'win32') {
       if ((metadata.mode & 0o077) !== 0) throw new Error('BROWSER_QA_CREDENTIAL_FILE_PERMISSIONS');
     }
+    if (metadata.size > 16384) throw new Error('BROWSER_QA_CREDENTIAL_SIZE');
     const value = parseGatewayCredential(await read(file, 'utf8'));
     if (!value) return { present: false, source: 'file-invalid', file };
     env.AI_GATEWAY_API_KEY = value;

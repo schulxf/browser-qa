@@ -99,31 +99,7 @@ test('falha de transport nunca vira sucesso', async () => {
   await assert.rejects(() => callJev(input(), { now: NOW, evaluate: async () => { throw new Error('falha'); } }), /falha/);
 });
 
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jF3sAAAAASUVORK5CYII=', 'base64');
-const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-async function gateFixture() {
-  const dir = await mkdtemp(join(tmpdir(), 'qa-skill-'));
-  await writeFile(join(dir, 'shot.png'), PNG);
-  await writeFile(join(dir, 'review.md'), 'Revisão sintética para testar apenas a integridade do gate.');
-  await writeFile(join(dir, 'assertion.txt'), 'assertion: synthetic');
-  await writeFile(join(dir, 'config.snapshot.json'), 'fixture config');
-  const evidence = [
-    { kind: 'screenshot', path: 'shot.png', sha256: digest(PNG) },
-    { kind: 'visual-review', path: 'review.md', sha256: digest('Revisão sintética para testar apenas a integridade do gate.') },
-    { kind: 'assertion', path: 'assertion.txt', sha256: digest('assertion: synthetic') }
-  ];
-  const subject = { revision: 'release-demo', sourceDigest: 'b'.repeat(64), buildId: 'local-fixture' };
-  const contract = { schemaVersion:2, runId:'QA-001', environment:'local', subject,
-    configSha256:hash('fixture config'), requireLiveJev:true, cases:[{ id:'VIS-1',dimension:'visual',criterion:'Critério de teste do gate.',
-      actor:'synthetic',viewport:'desktop',requiredEvidence:['screenshot','visual-review'] }] };
-  const contractHash = hash(JSON.stringify(contract));
-  const report = { schemaVersion:2,runId:'QA-001',environment:'local',subject:{...subject},contractSha256:contractHash,
-    configSha256:hash('fixture config'),simulated:false,executorId:'executor-a',reviewer:{id:'reviewer-b',independent:true,verdict:'accepted'},
-    tools:{agentBrowser:{ready:true,version:'fixture',skillSha256:'c'.repeat(64)},jev:{mode:'live',smokePassed:true,requests:1,model:'typesafe-ai/jev'}},
-    cases:[{id:'VIS-1',status:'passed',observed:'Observação sintética.',verifier:'reviewer-b',visualInspectedBy:'reviewer-b',
-      actor:'synthetic',viewport:'desktop',pathViolation:false,evidence}],defects:[] };
-  return { dir, contract, report, options:{contractHash,artifactRoot:dir,expectedSubject:{...subject}} };
-}
+import { gateFixture, digest } from './audit-fixtures.mjs';
 async function checkFixture(change, expected) {
   const f = await gateFixture();
   try { await change(f); const out = await evaluateGate(f.contract,f.report,f.options); assert.equal(out.status,expected,JSON.stringify(out)); }

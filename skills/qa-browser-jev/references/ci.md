@@ -29,8 +29,8 @@ PROJECT_DIR/.qa-browser-jev/runs/QA-001/
 Para que o gate encontre as evidências, seus paths no JSON são relativos à **pasta da run** (por exemplo `artifacts/nav-desktop.png`), não relativos a `artifacts/`.
 
 ```text
-node SKILL_DIR/scripts/evidence.mjs RUN_DIR artifacts/nav-desktop.png screenshot
-node SKILL_DIR/scripts/qa-gate.mjs RUN_DIR/contract.json RUN_DIR/result.json RUN_DIR RUN_DIR/subject-current.json
+node SKILL_DIR/scripts/evidence.mjs RUN_DIR artifacts/nav-desktop.png screenshot --capture CAPTURE.json
+node SKILL_DIR/scripts/qa-gate.mjs RUN_DIR/contract.json RUN_DIR/result.json RUN_DIR RUN_DIR/subject-current.json --approved-contract-sha256 HOST_APPROVED_SHA
 ```
 
 O primeiro comando emite hash e tipo do arquivo existente. Não cria prova nem faz avaliação da imagem. O segundo verifica integridade/completude declarada. Exit `0`: PASSED, `1`: FAILED, `2`: BLOCKED/entrada inválida. `approvesDeployment=false` sempre.
@@ -39,7 +39,7 @@ Todo caso incluído no contrato é obrigatório. Exclusões devem estar registra
 
 ## O que o gate verifica — e o que não verifica
 
-Verifica esquema, contrato/configuração vinculados, identidade declarada do build, casos completos, status, hashes dos arquivos, paths sem escape, evidência de imagem, assertions declaradas, revisor diferente do executor, flag de inspeção visual, consumo Jev declarado quando obrigatório e defeitos bloqueantes.
+Verifica esquema, contrato/configuração vinculados, identidade declarada do build, casos completos, status, hashes dos arquivos, paths sem escape, evidência de imagem, assertions estruturadas e comparações suportadas, revisor diferente do executor, flag de inspeção visual, consumo Jev conferido no ledger quando obrigatório e defeitos bloqueantes.
 
 **Não é assinatura criptográfica de um avaliador nem detector de narrativa inventada.** Um agente que fabricar JSON pode mentir. O isolamento do revisor e a confiança nos verificadores são responsabilidades do host. Hash correto só comprova que os bytes referenciados são os mesmos; não comprova que esses bytes são verdadeiros. Compare a identidade do runtime com serviço/manifesto confiável e guarde prova dessa comparação em um caso próprio.
 
@@ -50,3 +50,7 @@ Resultados de testes unitários usam fixtures simuladas; não são pacotes de QA
 Não entregue secrets a código de PR não confiável. Não use evento privilegiado para fazer checkout e executar código do contribuinte. Execute diagnósticos offline no PR; um smoke pago requer execução confiável e aprovação explícita. Não faça upload automático de HAR, screenshots autenticadas ou respostas completas em repositórios públicos. Redija um relatório sanitizado, conservando evidência original em armazenamento restrito com retenção definida.
 
 Não substitua testes determinísticos, gates de segurança, cobertura existente ou aprovação de release por Jev. Não use um resultado semanticamente positivo para sobrepor assert negativo.
+
+## Migração da auditoria
+
+Leia [contrato aprovado, imagens, assertions, ledger e revisão](audit-hardening.md) antes de usar o gate atualizado. Pacotes antigos sem esses comprovantes permanecem bloqueados; não transforme placeholders em evidências.

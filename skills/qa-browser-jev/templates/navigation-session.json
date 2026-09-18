@@ -1,0 +1,7 @@
+{
+  "runId": "QA-ONE",
+  "caseId": "FILTER-01-desktop-flow",
+  "contractSha256": "COPY_APPROVED_CONTRACT_SHA256",
+  "approvedBySupervisor": false,
+  "dataClass": "synthetic"
+}
