@@ -4,58 +4,49 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-111827)](https://agentskills.io/specification)
 
-Evidence-driven browser QA for AI coding agents. Browser QA combines real browser interactions, visual inspection, bounded Jev evaluations, and an independent review gate in one portable [Agent Skill](https://agentskills.io/specification).
+Browser QA is an evidence-driven browser QA skill for AI coding agents. It combines real browser interaction through `agent-browser`, visual inspection by a capable supervisor, bounded Jev text evaluation through Vercel AI Gateway, and an independent review gate in a portable [Agent Skill](https://agentskills.io/specification).
 
-It is designed for Codex, Claude Code, Gemini CLI, Cursor, OpenCode, and other Agent Skills hosts. The supervising model can be Claude, GPT, Gemini, Grok, DeepSeek, or another capable model; the host—not the model name—must provide skill loading, shell access, and image inspection.
+The skill is designed for Codex, Claude Code, Gemini CLI, Cursor, OpenCode, and other Agent Skills hosts. The supervising model can be Claude, GPT, Gemini, Grok, DeepSeek, or another capable model; the host must be able to load skills, run local commands, and inspect images.
 
-> Browser QA does not claim “zero bugs,” silently fix the product, or turn an agent's `DONE` message into evidence. Approval is scoped to the tested build, journeys, environments, and viewports.
+Approvals are scoped to the tested build, journeys, environments, and viewports.
 
-## Why Browser QA
+## Capabilities
 
-Most agent-driven browser checks stop when a click succeeds or a page looks plausible. Browser QA treats those as observations, not proof.
-
-- Drives the browser only through `agent-browser`.
+- Uses `agent-browser` as the only browser controller.
 - Requires screenshots to be inspected by a vision-capable supervisor.
-- Checks persistence and outcomes independently instead of trusting UI feedback alone.
+- Verifies persistence and outcomes independently instead of trusting UI feedback.
 - Uses Jev only for bounded textual choices and evidence assessment.
 - Preserves failures instead of retrying around them.
 - Produces contracts, hashes, evidence, defect records, and an independent review gate.
 
-## Quick start
+## Quick Start
 
-### 1. Run the installer from GitHub
+### Install from GitHub
 
 ```sh
 npx --yes github:schulxf/browser-qa
 ```
 
-The terminal installer:
+The guided installer:
 
 1. installs `qa-browser-jev` into the Agent Skills hosts you choose;
-2. installs the skill's runtime dependency inside the installed skill, not in your app;
+2. installs the skill runtime dependency inside the installed skill, not inside your app;
 3. offers a separate credential screen for `AI_GATEWAY_API_KEY`;
 4. prints the exact validation and next-step commands.
 
-After the first npm release, the shorter command will be:
-
-```sh
-npx browser-qa
-```
-
-The package is configured for that command, but this repository does not claim that an npm release already exists.
-
-### 2. Verify the installation
+### Verify the installation
 
 From the installed skill directory:
 
 ```sh
-npm test
 node scripts/doctor.mjs
 ```
 
 `doctor.mjs` is offline. It checks Node.js, the AI SDK, the Gateway credential, and the `agent-browser` executable without opening a browser or making a paid request.
 
-### 3. Configure a project
+For the test suite, use the isolated credential setup in [Development](#development).
+
+### Configure a project
 
 Replace the placeholders with real absolute paths and your non-production application URL:
 
@@ -68,9 +59,9 @@ node SKILL_DIR/scripts/qa.mjs init \
 node SKILL_DIR/scripts/doctor.mjs --project PROJECT_DIR
 ```
 
-The initializer creates only `PROJECT_DIR/qa.config.json` and never overwrites an existing file. Review its journeys, actors, viewports, allowed origins, and verification criteria before a run.
+The initializer creates only `PROJECT_DIR/qa.config.json` and never overwrites an existing file. Review the generated journeys, actors, viewports, allowed origins, and verification criteria before a run.
 
-### 4. Ask your agent to use the skill
+### Ask your agent to use the skill
 
 ```text
 Use the qa-browser-jev skill to verify this implementation.
@@ -84,7 +75,7 @@ desktop and mobile screenshots, cover negative states, preserve failures,
 and return the report, evidence paths, blockers, and independent review.
 ```
 
-## Installation options
+## Installation Options
 
 ### Guided installer
 
@@ -98,7 +89,7 @@ Run the credential screen again without reinstalling:
 npx --yes github:schulxf/browser-qa configure
 ```
 
-For automation, pass the Gateway key through standard input instead of a command-line argument:
+For automation, pass the Gateway key through standard input:
 
 ```sh
 printf '%s' "$AI_GATEWAY_API_KEY" | npx --yes github:schulxf/browser-qa configure --gateway-key-stdin
@@ -106,7 +97,7 @@ printf '%s' "$AI_GATEWAY_API_KEY" | npx --yes github:schulxf/browser-qa configur
 
 The key is never accepted as a CLI argument, printed, written to the skill directory, or added to the consumer project.
 
-### Standard Agent Skills CLI
+### Agent Skills CLI
 
 If you prefer the ecosystem installer directly:
 
@@ -134,9 +125,9 @@ npm ci --omit=dev --ignore-scripts --workspaces=false
 npx skills add . --skill qa-browser-jev
 ```
 
-You can also copy the complete `skills/qa-browser-jev` directory to a supported skills location. Copying only `SKILL.md` is not sufficient because the scripts, schemas, templates, and references are part of the skill.
+You can also copy the complete `skills/qa-browser-jev` directory to a supported skills location. Copying only `SKILL.md` is not sufficient because scripts, schemas, templates, and references are part of the skill.
 
-## Model and host compatibility
+## Model and Host Compatibility
 
 Browser QA is model-neutral. Its instructions do not depend on a Codex-, Claude-, or Gemini-specific prompt format.
 
@@ -169,11 +160,11 @@ The installer stores only `AI_GATEWAY_API_KEY`, and only when you choose to conf
 | Windows | `%APPDATA%\browser-qa\credentials.env` |
 | macOS / Linux | `${XDG_CONFIG_HOME:-~/.config}/browser-qa/credentials.env` |
 
-Set `BROWSER_QA_ENV_FILE` to use another reviewed path. On POSIX systems the installer creates the file with mode `0600`. Never put the key in `qa.config.json`, a prompt, a frontend variable, screenshots, issues, or shell history.
+Set `BROWSER_QA_ENV_FILE` to use another reviewed path. On POSIX systems, the installer creates the file with mode `0600`. Never put the key in `qa.config.json`, a prompt, a frontend variable, screenshots, issues, or shell history.
 
-No paid API call occurs during installation or `npm test`. A live Gateway smoke is an explicit, separate step described in [the Gateway reference](skills/qa-browser-jev/references/gateway.md).
+Installation does not make a paid API request. For offline tests, isolate credentials as described in [Development](#development). A live Gateway smoke test is a separate step described in the [Gateway reference](skills/qa-browser-jev/references/gateway.md).
 
-## How it works
+## How It Works
 
 ```text
 Product requirements + qa.config.json
@@ -198,7 +189,7 @@ Product requirements + qa.config.json
 
 The integrity gate validates declared evidence, hashes, build identity, required cases, and reviewer independence. It does not deploy software and cannot prove that a narrative is true by itself.
 
-## Included commands
+## Included Commands
 
 | Command | Purpose |
 | --- | --- |
@@ -211,21 +202,21 @@ The integrity gate validates declared evidence, hashes, build identity, required
 | `scripts/evidence.mjs` | Hash and reference existing evidence files. |
 | `scripts/qa-gate.mjs` | Validate report integrity and completeness without authorizing deployment. |
 
-## Repository layout
+## Repository Layout
 
 ```text
 browser-qa/
-├── bin/                         # npx installer and credential TUI
-├── skills/qa-browser-jev/       # complete distributable skill
-│   ├── SKILL.md
-│   ├── scripts/
-│   ├── references/
-│   ├── schemas/
-│   ├── templates/
-│   └── tests/
-├── examples/fixture-app/        # local synthetic demo
-├── docs/                        # architecture and publishing notes
-└── scripts/                     # repository checks
+|-- bin/                         # npx installer and credential TUI
+|-- skills/qa-browser-jev/       # complete distributable skill
+|   |-- SKILL.md
+|   |-- scripts/
+|   |-- references/
+|   |-- schemas/
+|   |-- templates/
+|   `-- tests/
+|-- examples/fixture-app/        # local synthetic demo
+|-- docs/                        # architecture and publishing notes
+`-- scripts/                     # repository checks
 ```
 
 Everything required at skill runtime stays under `skills/qa-browser-jev`. The target application receives only its own `qa.config.json` and private evidence directory.
@@ -233,16 +224,36 @@ Everything required at skill runtime stays under `skills/qa-browser-jev`. The ta
 ## Development
 
 ```sh
-npm test
-npm pack --dry-run
-npm publish --dry-run
+cd skills/qa-browser-jev
+npm ci --omit=dev --ignore-scripts --workspaces=false
+cd ../..
 ```
 
-`npm test` is the offline baseline. It validates JavaScript syntax, JSON, Markdown links, path neutrality, isolated skill copies, configuration boundaries, Jev dry-runs, and evidence gates. It is not an end-to-end browser test of a consumer product.
+The tests include a missing-credential check. Clear `AI_GATEWAY_API_KEY` and point `BROWSER_QA_ENV_FILE` at an empty or nonexistent file so the suite cannot load a configured personal Gateway key.
 
-Before proposing a change, read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [the architecture notes](docs/ARCHITECTURE.md). Publishing maintainers should follow [docs/PUBLISHING.md](docs/PUBLISHING.md).
+On macOS or Linux:
 
-## Security and limitations
+```sh
+qa_test_credentials="$(mktemp)"
+AI_GATEWAY_API_KEY= BROWSER_QA_ENV_FILE="$qa_test_credentials" npm test
+rm "$qa_test_credentials"
+```
+
+In a dedicated PowerShell session:
+
+```powershell
+$env:AI_GATEWAY_API_KEY = ''
+$env:BROWSER_QA_ENV_FILE = Join-Path $env:TEMP ("browser-qa-tests-" + [guid]::NewGuid() + ".env")
+npm test
+```
+
+The root package has no runtime dependencies. The bundled skill keeps its runtime dependency and lockfile inside `skills/qa-browser-jev`.
+
+With credentials isolated, `npm test` is the offline baseline. It validates JavaScript syntax, JSON, Markdown links, path neutrality, isolated skill copies, configuration boundaries, Jev dry runs, and evidence gates. It is not an end-to-end browser test of a consumer product.
+
+Before proposing a change, read [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the [architecture notes](docs/ARCHITECTURE.md). Publishing maintainers should follow [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+## Security and Limitations
 
 - Use synthetic data and dedicated accounts only.
 - Do not connect personal browser profiles or production environments.
